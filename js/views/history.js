@@ -43,7 +43,7 @@ export function renderHistory(container) {
             el('div', { class: 'history-row-date' }, formatDisplayDate(s.date)),
           ]),
           el('div', { class: 'history-row-meta' }, [
-            el('span', {}, s.exercises.length + ' exercises'),
+            el('span', {}, s.exercises.length + (s.exercises.length === 1 ? ' exercise' : ' exercises')),
             el('span', {}, totalVolume(s).toLocaleString() + ' kg vol'),
           ]),
         ])
