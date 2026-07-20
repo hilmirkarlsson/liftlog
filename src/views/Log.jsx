@@ -1,24 +1,108 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiftLog } from "../lib/state.jsx";
 import { useToast } from "../lib/toast.jsx";
+import { useRestTimer } from "../components/RestTimer.jsx";
 import { targetFromPlan } from "../lib/coach.js";
+import { primaryMuscleLabels } from "../lib/muscles.js";
+import { daysBetween, todayKey } from "../lib/util.js";
 import Modal from "../components/Modal.jsx";
+
+function sessionTotals(session) {
+  let volume = 0;
+  let sets = 0;
+  for (const ex of session.exercises)
+    for (const s of ex.sets) {
+      volume += (s.weight || 0) * (s.reps || 0);
+      sets += 1;
+    }
+  return { volume, sets };
+}
+
+// Black live-summary bar: duration ticks while the workout is today's.
+function SessionSummary({ session }) {
+  const { volume, sets } = sessionTotals(session);
+  const isToday = session.date === todayKey();
+  const [, tick] = useState(0);
+
+  useEffect(() => {
+    if (!isToday) return;
+    const id = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [isToday]);
+
+  let duration = "—";
+  if (isToday && session.createdAt) {
+    const s = Math.max(0, Math.floor((Date.now() - session.createdAt) / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    duration = h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}:${String(s % 60).padStart(2, "0")}`;
+  }
+
+  const Cell = ({ label, value }) => (
+    <div className="flex-1 text-center">
+      <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/50">{label}</div>
+      <div className="mt-0.5 font-mono text-lg font-bold tabular-nums">{value}</div>
+    </div>
+  );
+
+  return (
+    <div className="flex items-center divide-x divide-white/15 rounded-2xl bg-ink py-3 text-white">
+      <Cell label="Duration" value={duration} />
+      <Cell label="Volume" value={`${Math.round(volume).toLocaleString()} kg`} />
+      <Cell label="Sets" value={sets} />
+    </div>
+  );
+}
+
+function Stepper({ value, onChange, step, format }) {
+  const num = parseFloat(value) || 0;
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => onChange(format(Math.max(0, num - step)))}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-lg font-bold text-ink-secondary transition-colors hover:border-ink"
+      >
+        −
+      </button>
+      <input
+        type="number"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-11 w-full min-w-0 rounded-xl border border-border-input bg-surface-input text-center text-xl font-bold outline-none focus:border-ink"
+      />
+      <button
+        type="button"
+        onClick={() => onChange(format(num + step))}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line text-lg font-bold text-ink-secondary transition-colors hover:border-ink"
+      >
+        +
+      </button>
+    </div>
+  );
+}
 
 function AddSetModal({ session, exercise, target, onClose }) {
   const { addSet, checkPR } = useLiftLog();
+  const { startRest } = useRestTimer();
   const showToast = useToast();
-  // Pre-fill with the coach's target so hitting the plan is one tap.
-  const [weight, setWeight] = useState(target?.weight != null ? String(target.weight) : "");
-  const [reps, setReps] = useState(target ? String(target.reps) : "");
+  const lastSet = exercise.sets[exercise.sets.length - 1] || null;
+  // Pre-fill: repeat the last set if there is one, otherwise the coach target.
+  const [weight, setWeight] = useState(
+    lastSet ? String(lastSet.weight) : target?.weight != null ? String(target.weight) : ""
+  );
+  const [reps, setReps] = useState(lastSet ? String(lastSet.reps) : target ? String(target.reps) : "");
 
   function submit() {
-    const w = parseFloat(weight);
+    const w = parseFloat(weight) || 0;
     const r = parseInt(reps, 10);
-    if ((!w && w !== 0) || !r) return;
-    const { isPR } = checkPR(exercise.name, w || 0, r);
-    addSet(session.id, exercise.id, w || 0, r);
+    if (!r) return;
+    const { isPR } = checkPR(exercise.name, w, r);
+    addSet(session.id, exercise.id, w, r);
+    startRest(90);
     onClose();
-    if (isPR) showToast("🏆 New PR — " + exercise.name);
+    if (isPR) showToast("New PR — " + exercise.name);
   }
 
   return (
@@ -29,40 +113,30 @@ function AddSetModal({ session, exercise, target, onClose }) {
         <button
           type="button"
           onClick={submit}
-          className="w-full rounded-xl bg-accent py-3 text-center font-semibold text-white transition-opacity hover:opacity-90"
+          className="w-full rounded-xl bg-ink py-3.5 text-center text-sm font-bold uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-90"
         >
           Log set
         </button>
       }
     >
       {target ? (
-        <div className="mb-3 rounded-lg bg-accent-soft px-3 py-2 text-sm font-medium text-accent">
-          🎯 Coach target: {target.sets}×{target.reps}
-          {target.weight != null ? ` @ ${target.weight}kg` : ""}
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-line px-3 py-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">Coach target</span>
+          <span className="font-mono text-sm font-bold">
+            {target.sets}×{target.reps}
+            {target.weight != null ? ` @ ${target.weight}kg` : ""}
+          </span>
         </div>
       ) : null}
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-ink-secondary">Weight (kg)</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            autoFocus
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            className="rounded-lg border border-border-input bg-surface-input px-3 py-2.5 text-lg font-semibold outline-none focus:border-accent"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-ink-secondary">Reps</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            value={reps}
-            onChange={(e) => setReps(e.target.value)}
-            className="rounded-lg border border-border-input bg-surface-input px-3 py-2.5 text-lg font-semibold outline-none focus:border-accent"
-          />
-        </label>
+      <div className="flex flex-col gap-4">
+        <div>
+          <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">Weight · kg</div>
+          <Stepper value={weight} onChange={setWeight} step={2.5} format={(n) => String(Math.round(n * 10) / 10)} />
+        </div>
+        <div>
+          <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">Reps</div>
+          <Stepper value={reps} onChange={setReps} step={1} format={(n) => String(Math.round(n))} />
+        </div>
       </div>
     </Modal>
   );
@@ -94,15 +168,15 @@ function AddExerciseModal({ session, onClose }) {
         placeholder="Search or add exercise…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="mb-3 w-full rounded-lg border border-border-input bg-surface-input px-3 py-2.5 outline-none focus:border-accent"
+        className="mb-3 w-full rounded-xl border border-border-input bg-surface-input px-3 py-2.5 outline-none focus:border-ink"
       />
-      <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+      <div className="flex max-h-72 flex-col overflow-y-auto">
         {matches.map((e) => (
           <button
             key={e.id}
             type="button"
             onClick={() => pick(e.name)}
-            className="rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface-muted-alt"
+            className="border-b border-line px-1 py-3 text-left text-sm font-medium last:border-b-0 hover:bg-surface-muted"
           >
             {e.name}
           </button>
@@ -111,7 +185,7 @@ function AddExerciseModal({ session, onClose }) {
           <button
             type="button"
             onClick={createAndPick}
-            className="rounded-lg px-3 py-2.5 text-left font-medium text-accent transition-colors hover:bg-accent-soft"
+            className="px-1 py-3 text-left text-sm font-bold underline underline-offset-2"
           >
             + Add "{query.trim()}"
           </button>
@@ -126,15 +200,23 @@ function ExerciseCard({ session, exercise }) {
   const [addingSet, setAddingSet] = useState(false);
   const best = getBests()[exercise.name];
   const target = targetFromPlan(getCoach()?.plan, session.split, exercise.name);
+  const muscles = primaryMuscleLabels(exercise.name, session.split);
 
   return (
-    <div className="rounded-xl border border-line bg-surface p-4 shadow-card">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-semibold text-ink">{exercise.name}</span>
+    <div className="rounded-2xl border border-line bg-surface p-4">
+      <div className="mb-1 flex items-start justify-between gap-2">
+        <div>
+          <div className="font-bold text-ink">{exercise.name}</div>
+          {muscles.length ? (
+            <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+              {muscles.join(" · ")}
+            </div>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={() => removeExerciseFromSession(session.id, exercise.id)}
-          className="rounded-full p-1 text-ink-muted transition-colors hover:bg-surface-muted-alt hover:text-danger"
+          className="rounded-full p-1 text-ink-muted transition-colors hover:text-danger"
           aria-label={`Remove ${exercise.name}`}
         >
           ✕
@@ -142,21 +224,27 @@ function ExerciseCard({ session, exercise }) {
       </div>
 
       {target ? (
-        <div className="mb-2 rounded-lg bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent">
-          🎯 Target: {target.sets}×{target.reps}
+        <div className="mb-2 text-[11px] font-semibold text-ink-secondary">
+          Target {target.sets}×{target.reps}
           {target.weight != null ? ` @ ${target.weight}kg` : ""}
         </div>
       ) : null}
 
       {exercise.sets.length ? (
-        <div className="mb-3 flex flex-col gap-1.5">
-          {exercise.sets.map((s) => (
-            <div key={s.id} className="flex items-center justify-between rounded-lg bg-surface-muted px-3 py-2">
-              <span className="text-sm font-medium">{s.weight} kg × {s.reps}</span>
+        <div className="mb-3 flex flex-col">
+          {exercise.sets.map((s, i) => (
+            <div key={s.id} className="flex items-center justify-between border-b border-line py-2 last:border-b-0">
+              <div className="flex items-baseline gap-3">
+                <span className="w-5 font-mono text-xs font-bold text-ink-muted">{i + 1}</span>
+                <span className="font-mono text-sm font-bold tabular-nums">
+                  {s.weight} <span className="text-xs font-medium text-ink-muted">kg</span> × {s.reps}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => removeSet(session.id, exercise.id, s.id)}
                 className="text-ink-muted hover:text-danger"
+                aria-label="Remove set"
               >
                 ✕
               </button>
@@ -164,19 +252,21 @@ function ExerciseCard({ session, exercise }) {
           ))}
         </div>
       ) : (
-        <div className="mb-3 py-2 text-sm text-ink-muted">No sets yet</div>
+        <div className="mb-3 py-1 text-sm text-ink-muted">No sets yet</div>
       )}
 
       <button
         type="button"
         onClick={() => setAddingSet(true)}
-        className="w-full rounded-lg border border-dashed border-border-strong py-2 text-sm font-medium text-ink-secondary transition-colors hover:border-accent hover:text-accent"
+        className="w-full rounded-xl border border-ink py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-ink transition-colors hover:bg-ink hover:text-white"
       >
         + Add set
       </button>
 
       {best ? (
-        <div className="mt-2 text-xs text-ink-muted">Best: {best.weight}kg × {best.reps}</div>
+        <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+          Best {best.weight > 0 ? `${best.weight}kg` : "BW"} × {best.reps}
+        </div>
       ) : null}
 
       {addingSet ? (
@@ -200,46 +290,47 @@ function SessionCard({ session, dateKey }) {
 
   function finish() {
     syncSession(session.id);
-    showToast("Session saved — syncing to Dashboard…");
+    showToast("Session saved");
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-xl border border-line bg-surface p-4 shadow-card">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-ink">{session.split}</h2>
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm("Delete this session?")) deleteSession(session.id);
-            }}
-            className="rounded-full p-1.5 text-ink-muted transition-colors hover:bg-surface-muted-alt hover:text-danger"
-          >
-            🗑
-          </button>
-        </div>
-        {coachGroup ? (
-          <button
-            type="button"
-            onClick={() => {
-              addCoachTargetsToSession(session.id, coachGroup);
-              showToast("🎯 Coach plan loaded");
-            }}
-            className="mt-3 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          >
-            🎯 Start from coach plan ({coachGroup.exercises.length} exercises)
-          </button>
-        ) : null}
-        {prev ? (
-          <button
-            type="button"
-            onClick={() => copyExercisesFrom(session.id, prev)}
-            className="mt-3 w-full rounded-lg bg-accent-soft py-2 text-sm font-medium text-accent transition-opacity hover:opacity-90"
-          >
-            ↻ Repeat {prev.date} ({prev.exercises.length} exercises)
-          </button>
-        ) : null}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-extrabold uppercase tracking-tight text-ink">{session.split}</h2>
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm("Delete this session?")) deleteSession(session.id);
+          }}
+          className="text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted underline underline-offset-2 hover:text-danger"
+        >
+          Delete
+        </button>
       </div>
+
+      <SessionSummary session={session} />
+
+      {coachGroup ? (
+        <button
+          type="button"
+          onClick={() => {
+            addCoachTargetsToSession(session.id, coachGroup);
+            showToast("Coach plan loaded");
+          }}
+          className="w-full rounded-xl bg-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-90"
+        >
+          Start from coach plan · {coachGroup.exercises.length} exercises
+        </button>
+      ) : null}
+      {prev ? (
+        <button
+          type="button"
+          onClick={() => copyExercisesFrom(session.id, prev)}
+          className="w-full rounded-xl border border-line py-3 text-xs font-bold uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink"
+        >
+          Repeat {prev.date} · {prev.exercises.length} exercises
+        </button>
+      ) : null}
 
       <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
         {session.exercises.map((ex) => (
@@ -250,29 +341,26 @@ function SessionCard({ session, dateKey }) {
       <button
         type="button"
         onClick={() => setAddingExercise(true)}
-        className="rounded-xl border border-dashed border-border-strong py-3 text-sm font-medium text-ink-secondary transition-colors hover:border-accent hover:text-accent"
+        className="rounded-2xl border border-dashed border-border-strong py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-ink-secondary transition-colors hover:border-ink hover:text-ink"
       >
         + Add exercise
       </button>
 
-      <div className="rounded-xl border border-line bg-surface p-4 shadow-card">
-        <h2 className="mb-2 font-semibold text-ink">Notes</h2>
-        <textarea
-          placeholder="Notes (optional)…"
-          value={notes}
-          onChange={(e) => setNotesLocal(e.target.value)}
-          onBlur={(e) => setNotes(session.id, e.target.value)}
-          rows={3}
-          className="w-full resize-none rounded-lg border border-border-input bg-surface-input px-3 py-2 outline-none focus:border-accent"
-        />
-      </div>
+      <textarea
+        placeholder="Notes…"
+        value={notes}
+        onChange={(e) => setNotesLocal(e.target.value)}
+        onBlur={(e) => setNotes(session.id, e.target.value)}
+        rows={2}
+        className="w-full resize-none rounded-2xl border border-line bg-surface px-4 py-3 text-sm outline-none focus:border-ink"
+      />
 
       <button
         type="button"
         onClick={finish}
-        className="rounded-xl bg-accent py-3 text-center font-semibold text-white transition-opacity hover:opacity-90"
+        className="rounded-2xl bg-ink py-4 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition-opacity hover:opacity-90"
       >
-        ✓ Finish & sync session
+        Finish workout
       </button>
 
       {addingExercise ? <AddExerciseModal session={session} onClose={() => setAddingExercise(false)} /> : null}
@@ -280,22 +368,45 @@ function SessionCard({ session, dateKey }) {
   );
 }
 
+function WeekStrip() {
+  const { getSessions } = useLiftLog();
+  const today = todayKey();
+  const week = getSessions().filter(
+    (s) => daysBetween(s.date, today) <= 6 && s.exercises.some((ex) => ex.sets.length)
+  );
+  const volume = week.reduce(
+    (n, s) => n + s.exercises.reduce((m, ex) => m + ex.sets.reduce((v, set) => v + set.weight * set.reps, 0), 0),
+    0
+  );
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">Last 7 days</span>
+      <span className="font-mono text-sm font-bold tabular-nums">
+        {week.length} workout{week.length === 1 ? "" : "s"} · {Math.round(volume).toLocaleString()} kg
+      </span>
+    </div>
+  );
+}
+
 function SplitPicker({ dateKey }) {
   const { getSplits, createSession } = useLiftLog();
   return (
-    <div className="rounded-xl border border-line bg-surface p-4 shadow-card">
-      <h2 className="mb-3 font-semibold text-ink">What are you training?</h2>
-      <div className="grid grid-cols-2 gap-2.5">
-        {getSplits().map((split) => (
-          <button
-            key={split}
-            type="button"
-            onClick={() => createSession(dateKey, split)}
-            className="rounded-lg border border-line bg-surface-muted py-3 text-sm font-medium text-ink transition-colors hover:border-accent hover:text-accent"
-          >
-            {split}
-          </button>
-        ))}
+    <div className="flex flex-col gap-4">
+      <WeekStrip />
+      <div>
+        <h2 className="mb-3 text-2xl font-extrabold uppercase tracking-tight text-ink">Start workout</h2>
+        <div className="grid grid-cols-2 gap-2">
+          {getSplits().map((split) => (
+            <button
+              key={split}
+              type="button"
+              onClick={() => createSession(dateKey, split)}
+              className="rounded-xl border border-line py-4 text-xs font-bold uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
+            >
+              {split}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -308,7 +419,7 @@ export default function Log({ dateKey }) {
   if (!sessions.length) return <SplitPicker dateKey={dateKey} />;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {sessions.map((session) => (
         <SessionCard key={session.id} session={session} dateKey={dateKey} />
       ))}

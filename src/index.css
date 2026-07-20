@@ -1,23 +1,40 @@
 @import "tailwindcss";
-@import "./theme.css";
 
-/* Re-themed from LiftLog's original dark/red gym palette to the shared
-   light/blue Personal OS Dashboard look. Same token names as the standalone
-   app kept where practical, redefined here to point at the shared theme. */
+/* Monochrome theme: pure black on white, hairline borders, no shadows.
+   Red (--color-activation) is reserved exclusively for muscle activation
+   on the body map — everything else stays black and white. */
 @theme {
-  --color-bg: var(--color-surface-muted);
-  --color-surface-2: var(--color-surface);
-  --color-surface-3: var(--color-surface-muted-alt);
+  --color-accent: #0a0a0a;
+  --color-accent-soft: #f4f4f4;
+
+  --color-ink: #0a0a0a;
+  --color-ink-secondary: #404040;
+  --color-ink-muted: #a3a3a3;
+
+  --color-surface: #ffffff;
+  --color-surface-muted: #fafafa;
+  --color-surface-muted-alt: #f4f4f4;
+  --color-surface-input: #fafafa;
+
+  --color-border: #e5e5e5;
+  --color-border-strong: #d4d4d4;
+  --color-border-input: #e0e0e0;
+
+  --color-activation: #dc2626;
+  --color-activation-soft: rgba(220, 38, 38, 0.1);
+
+  --color-success: #0a0a0a;
+  --color-warning: #0a0a0a;
+  --color-danger: #dc2626;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --shadow-card: 0 0 #0000;
+  --shadow-hover: 0 0 #0000;
+
+  --color-bg: #ffffff;
   --color-line: var(--color-border);
-  --color-line-soft: var(--color-surface-muted-alt);
   --color-text: var(--color-ink);
-  --color-text-dim: var(--color-ink-secondary);
-  --color-text-faint: var(--color-ink-muted);
-
-  --color-accent-2: #3b82f6;
-  --color-gold: #d97706;
-
-  --font-display: var(--font-sans);
 
   --animate-fade: fade 0.2s ease-out both;
   --animate-pop: pop 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
@@ -70,7 +87,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
     border-radius: 4px;
   }

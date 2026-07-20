@@ -50,7 +50,7 @@ function TargetGroup({ group }) {
             <div className="font-medium text-ink">{t.name}</div>
             <div className="text-xs text-ink-muted">{t.note}</div>
           </div>
-          <div className="shrink-0 rounded-lg bg-accent-soft px-3 py-1.5 text-sm font-bold text-accent">
+          <div className="shrink-0 rounded-lg bg-ink px-3 py-1.5 font-mono text-sm font-bold tabular-nums text-white">
             {t.sets}×{t.reps}
             {t.weight != null ? ` @ ${t.weight}kg` : ""}
           </div>
@@ -77,7 +77,7 @@ export default function Coach() {
     setError(null);
     try {
       const { source } = await refreshCoach({ preferLocal });
-      showToast(source === "ai" ? "🧠 Plan updated by Claude" : "Plan updated");
+      showToast(source === "ai" ? "Plan updated by Claude" : "Plan updated");
     } catch (e) {
       setError(e?.message || "Couldn't reach the AI coach. Check your API key and connection.");
     } finally {
@@ -114,9 +114,9 @@ export default function Coach() {
             type="button"
             onClick={() => regenerate(false)}
             disabled={busy}
-            className="flex-1 rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex-1 rounded-xl bg-ink py-3 text-xs font-bold uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {busy ? "Thinking…" : hasKey ? "🧠 Generate with AI" : "Generate plan"}
+            {busy ? "Thinking…" : hasKey ? "Generate with AI" : "Generate plan"}
           </button>
           {hasKey ? (
             <button
