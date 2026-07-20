@@ -18,17 +18,23 @@ function saveQueue(q) {
   } catch {}
 }
 
+// The Dashboard backend on Railway — same URL the Dashboard's app.js uses.
+// A pasted Settings value overrides it; the default makes sync work out of
+// the box on every device instead of silently posting to a dead relative URL.
+const DEFAULT_API_BASE = "https://dashboard-production-100b.up.railway.app";
+
 function apiBase() {
   try {
-    return (JSON.parse(localStorage.getItem("liftlog-data")) || {}).settings?.apiBase?.trim() || "";
+    return (
+      (JSON.parse(localStorage.getItem("liftlog-data")) || {}).settings?.apiBase?.trim() || DEFAULT_API_BASE
+    );
   } catch {
-    return "";
+    return DEFAULT_API_BASE;
   }
 }
 
 async function pushOne(session) {
-  const base = apiBase();
-  const endpoint = base ? base.replace(/\/$/, "") + "/api/log-workout" : "/api/log-workout";
+  const endpoint = apiBase().replace(/\/$/, "") + "/api/log-workout";
   try {
     const r = await fetch(endpoint, {
       method: "POST",
@@ -77,8 +83,7 @@ export function pendingCount() {
 
 export async function fetchRemoteSessions() {
   try {
-    const base = apiBase();
-    const endpoint = base ? base.replace(/\/$/, "") + "/api/liftlog-history" : "/api/liftlog-history";
+    const endpoint = apiBase().replace(/\/$/, "") + "/api/liftlog-history";
     const r = await fetch(endpoint, { cache: "no-store" });
     if (!r.ok) return [];
     const data = await r.json();

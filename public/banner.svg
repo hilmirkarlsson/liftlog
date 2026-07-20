@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Front figure, right side: gray segments with activated muscles in red -->
+  <g transform="translate(790,105) scale(2.2)">
+    <circle cx="60" cy="15" r="10" fill="#e8e8e8"/>
+    <rect x="54" y="25" width="12" height="8" rx="3" fill="#e8e8e8"/>
+    <ellipse cx="36" cy="45" rx="9" ry="8" fill="#dc2626" opacity="0.55"/>
+    <ellipse cx="84" cy="45" rx="9" ry="8" fill="#dc2626" opacity="0.55"/>
+    <rect x="44" y="40" width="15" height="17" rx="6" fill="#dc2626"/>
+    <rect x="61" y="40" width="15" height="17" rx="6" fill="#dc2626"/>
+    <rect x="50" y="59" width="20" height="26" rx="6" fill="#e8e8e8"/>
+    <rect x="43" y="59" width="6" height="22" rx="3" fill="#e8e8e8"/>
+    <rect x="71" y="59" width="6" height="22" rx="3" fill="#e8e8e8"/>
+    <ellipse cx="30" cy="66" rx="6" ry="11" fill="#dc2626" opacity="0.3"/>
+    <ellipse cx="90" cy="66" rx="6" ry="11" fill="#dc2626" opacity="0.3"/>
+    <ellipse cx="26" cy="92" rx="5" ry="13" transform="rotate(8 26 92)" fill="#e8e8e8"/>
+    <ellipse cx="94" cy="92" rx="5" ry="13" transform="rotate(-8 94 92)" fill="#e8e8e8"/>
+    <circle cx="23" cy="109" r="4" fill="#e8e8e8"/>
+    <circle cx="97" cy="109" r="4" fill="#e8e8e8"/>
+    <rect x="46" y="85" width="28" height="13" rx="5" fill="#e8e8e8"/>
+    <rect x="45" y="97" width="14" height="42" rx="7" fill="#e8e8e8"/>
+    <rect x="61" y="97" width="14" height="42" rx="7" fill="#e8e8e8"/>
+    <rect x="47" y="143" width="10" height="34" rx="5" fill="#e8e8e8"/>
+    <rect x="63" y="143" width="10" height="34" rx="5" fill="#e8e8e8"/>
+    <ellipse cx="52" cy="182" rx="6" ry="4" fill="#e8e8e8"/>
+    <ellipse cx="68" cy="182" rx="6" ry="4" fill="#e8e8e8"/>
+  </g>
+
+  <g font-family="'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif">
+    <text x="96" y="270" font-size="104" font-weight="800" letter-spacing="26" fill="#0a0a0a">LIFT<tspan fill="#a3a3a3">LOG</tspan></text>
+    <rect x="100" y="308" width="560" height="2" fill="#0a0a0a"/>
+    <text x="100" y="370" font-size="26" font-weight="700" letter-spacing="8" fill="#0a0a0a">TRACK EVERY SET. SEE EVERY MUSCLE.</text>
+    <text x="100" y="416" font-size="22" font-weight="500" letter-spacing="3" fill="#a3a3a3">AI coach · muscle heatmap · rest timer · PRs</text>
+
+    <g transform="translate(100,470)">
+      <rect width="360" height="72" rx="16" fill="#0a0a0a"/>
+      <text x="42" y="30" font-size="12" font-weight="700" letter-spacing="4" fill="#7a7a7a">DURATION</text>
+      <text x="42" y="56" font-size="24" font-weight="700" fill="#ffffff" font-family="ui-monospace, 'SF Mono', monospace">48:32</text>
+      <rect x="128" y="14" width="1" height="44" fill="#333333"/>
+      <text x="152" y="30" font-size="12" font-weight="700" letter-spacing="4" fill="#7a7a7a">VOLUME</text>
+      <text x="152" y="56" font-size="24" font-weight="700" fill="#ffffff" font-family="ui-monospace, 'SF Mono', monospace">6 420 kg</text>
+      <rect x="272" y="14" width="1" height="44" fill="#333333"/>
+      <text x="296" y="30" font-size="12" font-weight="700" letter-spacing="4" fill="#7a7a7a">SETS</text>
+      <text x="296" y="56" font-size="24" font-weight="700" fill="#ffffff" font-family="ui-monospace, 'SF Mono', monospace">18</text>
+    </g>
+  </g>
+</svg>

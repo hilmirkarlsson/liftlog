@@ -26,8 +26,16 @@ export function RestTimerProvider({ children }) {
     }
   }, [endsAt, secondsLeft]);
 
-  const startRest = useCallback((seconds = DEFAULT_REST_SECONDS) => setEndsAt(Date.now() + seconds * 1000), []);
-  const addTime = useCallback(() => setEndsAt((e) => (e ? e + 30000 : Date.now() + 30000)), []);
+  // setNow first so the chip renders the exact countdown immediately instead
+  // of a stale-clock value for the first tick.
+  const startRest = useCallback((seconds = DEFAULT_REST_SECONDS) => {
+    setNow(Date.now());
+    setEndsAt(Date.now() + seconds * 1000);
+  }, []);
+  const addTime = useCallback(() => {
+    setNow(Date.now());
+    setEndsAt((e) => (e ? e + 30000 : Date.now() + 30000));
+  }, []);
   const stopRest = useCallback(() => setEndsAt(null), []);
 
   return (

@@ -55,7 +55,7 @@ function SessionSummary({ session }) {
   );
 }
 
-function Stepper({ value, onChange, step, format }) {
+function Stepper({ value, onChange, step, format, inputMode = "decimal" }) {
   const num = parseFloat(value) || 0;
   return (
     <div className="flex items-center gap-1">
@@ -68,7 +68,7 @@ function Stepper({ value, onChange, step, format }) {
       </button>
       <input
         type="number"
-        inputMode="decimal"
+        inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-11 w-full min-w-0 rounded-xl border border-border-input bg-surface-input text-center text-xl font-bold outline-none focus:border-ink"
@@ -110,6 +110,7 @@ function AddSetModal({ session, exercise, target, onClose }) {
     <Modal
       title={exercise.name}
       onClose={onClose}
+      align="top"
       footer={
         <button
           type="button"
@@ -136,7 +137,7 @@ function AddSetModal({ session, exercise, target, onClose }) {
         </div>
         <div>
           <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">Reps</div>
-          <Stepper value={reps} onChange={setReps} step={1} format={(n) => String(Math.round(n))} />
+          <Stepper value={reps} onChange={setReps} step={1} format={(n) => String(Math.round(n))} inputMode="numeric" />
         </div>
       </div>
     </Modal>
@@ -181,20 +182,22 @@ function AddExerciseModal({ session, onClose }) {
   }
 
   return (
-    <Modal title="Add exercise" onClose={onClose}>
-      <input
-        type="text"
-        autoFocus
-        placeholder="Search or add exercise…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="mb-3 w-full rounded-xl border border-border-input bg-surface-input px-3 py-2.5 outline-none focus:border-ink"
-      />
-      <div className="flex max-h-[55dvh] flex-col overflow-y-auto">
+    <Modal title="Add exercise" onClose={onClose} align="top">
+      <div className="sticky top-0 z-10 -mx-5 -mt-4 bg-surface px-5 pb-3 pt-4">
+        <input
+          type="text"
+          autoFocus
+          placeholder="Search or add exercise…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full rounded-xl border border-border-input bg-surface-input px-3 py-2.5 outline-none focus:border-ink"
+        />
+      </div>
+      <div className="flex flex-col">
         {groups
           ? groups.map(({ cat, items }) => (
               <div key={cat}>
-                <div className="sticky top-0 bg-surface py-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink-muted">
+                <div className="bg-surface py-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink-muted">
                   {cat}
                 </div>
                 <div className="flex flex-col">
