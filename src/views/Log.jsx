@@ -301,7 +301,7 @@ function ExerciseCard({ session, exercise }) {
 }
 
 function SessionCard({ session, dateKey }) {
-  const { deleteSession, findPreviousSessionForSplit, copyExercisesFrom, addCoachTargetsToSession, getCoach, setNotes, syncSession } = useLiftLog();
+  const { deleteSession, findPreviousSessionForSplit, copyExercisesFrom, addCoachTargetsToSession, finishSession, getCoach, setNotes } = useLiftLog();
   const showToast = useToast();
   const [addingExercise, setAddingExercise] = useState(false);
   const [notes, setNotesLocal] = useState(session.notes || "");
@@ -313,8 +313,8 @@ function SessionCard({ session, dateKey }) {
       : null;
 
   function finish() {
-    syncSession(session.id);
-    showToast("Session saved");
+    finishSession(session.id);
+    showToast("Workout finished and saved");
   }
 
   return (
@@ -495,7 +495,7 @@ function SplitPicker({ dateKey }) {
 
 export default function Log({ dateKey }) {
   const { getSessionsForDate } = useLiftLog();
-  const sessions = getSessionsForDate(dateKey);
+  const sessions = getSessionsForDate(dateKey).filter((session) => !session.completedAt);
 
   if (!sessions.length) return <SplitPicker dateKey={dateKey} />;
 

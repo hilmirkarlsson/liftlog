@@ -19,13 +19,14 @@ function MuscleCard() {
   return (
     <div className="rounded-2xl border border-line p-4">
       <div className="mb-3 flex items-center justify-between">
-        <SectionTitle>Muscles · last 7 days</SectionTitle>
+        <SectionTitle>Training activation · last 7 days</SectionTitle>
         <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
-          Fresh
+          Lower
           <span className="h-2 w-10 rounded-full bg-gradient-to-r from-[#e8e8e8] to-activation" />
-          Worked
+          Higher
         </div>
       </div>
+      <p className="mb-3 text-xs text-ink-muted">Red shows recently trained muscles and set volume—not soreness.</p>
       <MuscleMap activation={activation} selected={selected} onPick={(g) => setSelected(g === selected ? null : g)} />
       <div className="mt-3 border-t border-line pt-3">
         {detail ? (

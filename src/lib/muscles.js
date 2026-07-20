@@ -37,7 +37,17 @@ const SPLIT_MUSCLES = {
 };
 
 export function musclesFor(exerciseName, split) {
-  return EXERCISE_MUSCLES[exerciseName] || SPLIT_MUSCLES[split] || { primary: [], secondary: [] };
+  if (EXERCISE_MUSCLES[exerciseName]) return EXERCISE_MUSCLES[exerciseName];
+  if (SPLIT_MUSCLES[split]) return SPLIT_MUSCLES[split];
+
+  const combined = String(split || "")
+    .split(" + ")
+    .map((name) => SPLIT_MUSCLES[name])
+    .filter(Boolean);
+  return {
+    primary: [...new Set(combined.flatMap((muscles) => muscles.primary))],
+    secondary: [...new Set(combined.flatMap((muscles) => muscles.secondary))],
+  };
 }
 
 export function primaryMuscleLabels(exerciseName, split) {

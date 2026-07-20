@@ -183,6 +183,13 @@ export function LiftLogProvider({ children }) {
         }, sessionId);
       },
 
+      finishSession(sessionId) {
+        mutate((d) => {
+          const session = getSession(d, sessionId);
+          if (session) session.completedAt = Date.now();
+        }, sessionId);
+      },
+
       copyExercisesFrom(sessionId, sourceSession) {
         mutate((d) => {
           const session = getSession(d, sessionId);
