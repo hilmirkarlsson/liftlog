@@ -2,6 +2,8 @@
 // above the tab bar. Tap +30 to extend, ✕ to dismiss.
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
+export const DEFAULT_REST_SECONDS = 3 * 60;
+
 const RestContext = createContext({ startRest: () => {}, addTime: () => {}, stopRest: () => {}, secondsLeft: 0 });
 
 export function RestTimerProvider({ children }) {
@@ -24,7 +26,7 @@ export function RestTimerProvider({ children }) {
     }
   }, [endsAt, secondsLeft]);
 
-  const startRest = useCallback((seconds = 90) => setEndsAt(Date.now() + seconds * 1000), []);
+  const startRest = useCallback((seconds = DEFAULT_REST_SECONDS) => setEndsAt(Date.now() + seconds * 1000), []);
   const addTime = useCallback(() => setEndsAt((e) => (e ? e + 30000 : Date.now() + 30000)), []);
   const stopRest = useCallback(() => setEndsAt(null), []);
 

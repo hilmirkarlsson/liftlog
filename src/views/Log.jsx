@@ -101,7 +101,7 @@ function AddSetModal({ session, exercise, target, onClose }) {
     if (!r) return;
     const { isPR } = checkPR(exercise.name, w, r);
     addSet(session.id, exercise.id, w, r);
-    startRest(90);
+    startRest();
     onClose();
     if (isPR) showToast("New PR — " + exercise.name);
   }
@@ -415,26 +415,57 @@ function WeekStrip() {
 function SplitPickerModal({ dateKey, onClose }) {
   const { getSplits, createSession, getCoach, findPreviousSessionForSplit } = useLiftLog();
   const coachTargets = getCoach()?.plan.targets || [];
+  const [selectedSplits, setSelectedSplits] = useState([]);
+
+  function toggleSplit(split) {
+    setSelectedSplits((current) => {
+      if (current.includes(split)) return current.filter((item) => item !== split);
+      if (split === "Rest day") return [split];
+      return [...current.filter((item) => item !== "Rest day"), split];
+    });
+  }
+
+  function startWorkout() {
+    if (!selectedSplits.length) return;
+    createSession(dateKey, selectedSplits.join(" + "));
+    onClose();
+  }
 
   return (
-    <Modal title="What are you training?" onClose={onClose}>
+    <Modal
+      title="What are you training?"
+      onClose={onClose}
+      footer={
+        <button
+          type="button"
+          onClick={startWorkout}
+          disabled={!selectedSplits.length}
+          className="w-full rounded-xl bg-ink py-3.5 text-center text-sm font-bold uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+        >
+          {selectedSplits.length ? `Start workout · ${selectedSplits.length} selected` : "Select training"}
+        </button>
+      }
+    >
       <div className="flex max-h-[60dvh] flex-col overflow-y-auto">
         {getSplits().map((split) => {
           const planned = coachTargets.some((t) => t.split === split);
           const prev = findPreviousSessionForSplit(dateKey, split);
+          const isSelected = selectedSplits.includes(split);
           return (
             <button
               key={split}
               type="button"
-              onClick={() => {
-                createSession(dateKey, split);
-                onClose();
-              }}
-              className="flex items-center justify-between border-b border-line px-1 py-3.5 text-left last:border-b-0 hover:bg-surface-muted"
+              aria-pressed={isSelected}
+              onClick={() => toggleSplit(split)}
+              className={`flex items-center justify-between border-b border-line px-3 py-3.5 text-left transition-colors last:border-b-0 ${
+                isSelected ? "bg-ink text-white" : "hover:bg-surface-muted"
+              }`}
             >
-              <span className="text-sm font-bold uppercase tracking-[0.15em] text-ink">{split}</span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
-                {planned ? "Coach plan ready" : prev ? `Last ${prev.date}` : ""}
+              <span className={`text-sm font-bold uppercase tracking-[0.15em] ${isSelected ? "text-white" : "text-ink"}`}>
+                {split}
+              </span>
+              <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${isSelected ? "text-white/65" : "text-ink-muted"}`}>
+                {isSelected ? "Selected" : planned ? "Coach plan ready" : prev ? `Last ${prev.date}` : ""}
               </span>
             </button>
           );
