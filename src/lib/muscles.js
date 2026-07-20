@@ -20,30 +20,9 @@ export const MUSCLE_LABELS = {
   calves: "Calves",
 };
 
-// primary counts full, secondary counts half.
-const EXERCISE_MUSCLES = {
-  "Bench Press": { primary: ["chest"], secondary: ["triceps", "shoulders"] },
-  "Incline Dumbbell Press": { primary: ["chest"], secondary: ["shoulders", "triceps"] },
-  "Overhead Press": { primary: ["shoulders"], secondary: ["triceps"] },
-  "Dips": { primary: ["triceps"], secondary: ["chest", "shoulders"] },
-  "Deadlift": { primary: ["lowerback", "hamstrings"], secondary: ["glutes", "traps", "forearms"] },
-  "Barbell Row": { primary: ["lats"], secondary: ["biceps", "traps"] },
-  "Pull-up": { primary: ["lats"], secondary: ["biceps", "forearms"] },
-  "Lat Pulldown": { primary: ["lats"], secondary: ["biceps"] },
-  "Face Pull": { primary: ["shoulders"], secondary: ["traps"] },
-  "Squat": { primary: ["quads"], secondary: ["glutes", "lowerback"] },
-  "Leg Press": { primary: ["quads"], secondary: ["glutes"] },
-  "Romanian Deadlift": { primary: ["hamstrings"], secondary: ["glutes", "lowerback"] },
-  "Leg Curl": { primary: ["hamstrings"], secondary: [] },
-  "Calf Raise": { primary: ["calves"], secondary: [] },
-  "Barbell Curl": { primary: ["biceps"], secondary: ["forearms"] },
-  "Hammer Curl": { primary: ["biceps"], secondary: ["forearms"] },
-  "Skull Crusher": { primary: ["triceps"], secondary: [] },
-  "Cable Tricep Pushdown": { primary: ["triceps"], secondary: [] },
-  "Plank": { primary: ["abs"], secondary: ["obliques"] },
-  "Hanging Leg Raise": { primary: ["abs"], secondary: ["obliques"] },
-  "Cable Crunch": { primary: ["abs"], secondary: [] },
-};
+// primary counts full, secondary counts half. Per-exercise mapping lives in
+// the exercise database.
+import { EXERCISE_MUSCLES } from "./exercises.js";
 
 // Fallback for user-added exercises: infer from the session's split.
 const SPLIT_MUSCLES = {

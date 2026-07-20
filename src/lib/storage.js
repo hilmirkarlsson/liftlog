@@ -1,3 +1,5 @@
+import { EXERCISES } from "./exercises.js";
+
 const KEY = "liftlog-data";
 
 // Seeded so the app isn't blank on first install — these are Hilmir's
@@ -8,13 +10,10 @@ const SEED_PRS = [
   { exercise: "Squat", weight: 160, reps: 1, date: "2026-01-01", seeded: true },
 ];
 
-const DEFAULT_EXERCISES = [
-  "Bench Press", "Incline Dumbbell Press", "Overhead Press", "Dips",
-  "Deadlift", "Barbell Row", "Pull-up", "Lat Pulldown", "Face Pull",
-  "Squat", "Leg Press", "Romanian Deadlift", "Leg Curl", "Calf Raise",
-  "Barbell Curl", "Hammer Curl", "Skull Crusher", "Cable Tricep Pushdown",
-  "Plank", "Hanging Leg Raise", "Cable Crunch",
-].map((name) => ({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name }));
+const DEFAULT_EXERCISES = EXERCISES.map(({ name }) => ({
+  id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+  name,
+}));
 
 const DEFAULT_SPLITS = ["Chest", "Back", "Shoulders", "Biceps", "Triseps", "Abs", "Forearms", "Legs", "Rest day"];
 
@@ -49,6 +48,14 @@ export function load() {
     };
     const oldDefaults = ["Back", "Chest & Shoulders", "Arms & Abs", "Legs"];
     if (JSON.stringify(merged.profile.splits) === JSON.stringify(oldDefaults)) merged.profile.splits = DEFAULT_SPLITS;
+    // Union stored exercises with the (growing) default database, keeping the
+    // stored entry (and its id) when names collide and appending user-added
+    // exercises at the end.
+    const byName = new Map(DEFAULT_EXERCISES.map((e) => [e.name.toLowerCase(), e]));
+    for (const e of parsed.exercises || []) {
+      if (e?.name) byName.set(e.name.toLowerCase(), e);
+    }
+    merged.exercises = [...byName.values()];
     return merged;
   } catch {
     return defaultData();

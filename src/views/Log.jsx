@@ -4,6 +4,7 @@ import { useToast } from "../lib/toast.jsx";
 import { useRestTimer } from "../components/RestTimer.jsx";
 import { targetFromPlan } from "../lib/coach.js";
 import { primaryMuscleLabels } from "../lib/muscles.js";
+import { CATEGORIES, exerciseCategory } from "../lib/exercises.js";
 import { daysBetween, todayKey } from "../lib/util.js";
 import Modal from "../components/Modal.jsx";
 
@@ -142,6 +143,18 @@ function AddSetModal({ session, exercise, target, onClose }) {
   );
 }
 
+function ExerciseRow({ exercise, onPick }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(exercise.name)}
+      className="border-b border-line px-1 py-3 text-left text-sm font-medium last:border-b-0 hover:bg-surface-muted"
+    >
+      {exercise.name}
+    </button>
+  );
+}
+
 function AddExerciseModal({ session, onClose }) {
   const { getExercises, addExercise, addExerciseToSession } = useLiftLog();
   const [query, setQuery] = useState("");
@@ -149,6 +162,13 @@ function AddExerciseModal({ session, onClose }) {
   const q = query.trim().toLowerCase();
   const matches = q ? all.filter((e) => e.name.toLowerCase().includes(q)) : all;
   const exactMatch = all.some((e) => e.name.toLowerCase() === q);
+
+  // Grouped browse when not searching; flat results while typing.
+  const groups = q
+    ? null
+    : [...CATEGORIES, "Custom"]
+        .map((cat) => ({ cat, items: all.filter((e) => exerciseCategory(e.name) === cat) }))
+        .filter((g) => g.items.length);
 
   function pick(name) {
     addExerciseToSession(session.id, name);
@@ -170,17 +190,21 @@ function AddExerciseModal({ session, onClose }) {
         onChange={(e) => setQuery(e.target.value)}
         className="mb-3 w-full rounded-xl border border-border-input bg-surface-input px-3 py-2.5 outline-none focus:border-ink"
       />
-      <div className="flex max-h-72 flex-col overflow-y-auto">
-        {matches.map((e) => (
-          <button
-            key={e.id}
-            type="button"
-            onClick={() => pick(e.name)}
-            className="border-b border-line px-1 py-3 text-left text-sm font-medium last:border-b-0 hover:bg-surface-muted"
-          >
-            {e.name}
-          </button>
-        ))}
+      <div className="flex max-h-[55dvh] flex-col overflow-y-auto">
+        {groups
+          ? groups.map(({ cat, items }) => (
+              <div key={cat}>
+                <div className="sticky top-0 bg-surface py-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink-muted">
+                  {cat}
+                </div>
+                <div className="flex flex-col">
+                  {items.map((e) => (
+                    <ExerciseRow key={e.id} exercise={e} onPick={pick} />
+                  ))}
+                </div>
+              </div>
+            ))
+          : matches.map((e) => <ExerciseRow key={e.id} exercise={e} onPick={pick} />)}
         {q && !exactMatch ? (
           <button
             type="button"
@@ -388,26 +412,52 @@ function WeekStrip() {
   );
 }
 
-function SplitPicker({ dateKey }) {
-  const { getSplits, createSession } = useLiftLog();
+function SplitPickerModal({ dateKey, onClose }) {
+  const { getSplits, createSession, getCoach, findPreviousSessionForSplit } = useLiftLog();
+  const coachTargets = getCoach()?.plan.targets || [];
+
   return (
-    <div className="flex flex-col gap-4">
-      <WeekStrip />
-      <div>
-        <h2 className="mb-3 text-2xl font-extrabold uppercase tracking-tight text-ink">Start workout</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {getSplits().map((split) => (
+    <Modal title="What are you training?" onClose={onClose}>
+      <div className="flex max-h-[60dvh] flex-col overflow-y-auto">
+        {getSplits().map((split) => {
+          const planned = coachTargets.some((t) => t.split === split);
+          const prev = findPreviousSessionForSplit(dateKey, split);
+          return (
             <button
               key={split}
               type="button"
-              onClick={() => createSession(dateKey, split)}
-              className="rounded-xl border border-line py-4 text-xs font-bold uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
+              onClick={() => {
+                createSession(dateKey, split);
+                onClose();
+              }}
+              className="flex items-center justify-between border-b border-line px-1 py-3.5 text-left last:border-b-0 hover:bg-surface-muted"
             >
-              {split}
+              <span className="text-sm font-bold uppercase tracking-[0.15em] text-ink">{split}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+                {planned ? "Coach plan ready" : prev ? `Last ${prev.date}` : ""}
+              </span>
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
+    </Modal>
+  );
+}
+
+function SplitPicker({ dateKey }) {
+  const [picking, setPicking] = useState(false);
+  return (
+    <div className="flex flex-col gap-4">
+      <WeekStrip />
+      <button
+        type="button"
+        onClick={() => setPicking(true)}
+        className="rounded-2xl bg-ink py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition-opacity hover:opacity-90"
+      >
+        + Start workout
+      </button>
+      <p className="text-center text-xs text-ink-muted">Pick what you're training from the popup.</p>
+      {picking ? <SplitPickerModal dateKey={dateKey} onClose={() => setPicking(false)} /> : null}
     </div>
   );
 }
